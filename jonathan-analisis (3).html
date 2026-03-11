@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jonathan · Data Soul</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Clash+Display:wght@400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a12;
+    --surface: #0d1220;
+    --accent1: #00f0ff;
+    --accent2: #ff3d6e;
+    --accent3: #a259ff;
+    --accent4: #ffe14d;
+    --text: #e8eaf2;
+    --muted: #4a5270;
+    --glow1: rgba(0,240,255,0.15);
+    --glow2: rgba(255,61,110,0.15);
+    --glow3: rgba(162,89,255,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CURSOR */
+  .cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--accent1);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s, background 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 40px; height: 40px;
+    border: 1px solid var(--accent1);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+    mix-blend-mode: screen;
+  }
+
+  /* CANVAS BG */
+  #bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* SECTIONS */
+  section {
+    position: relative;
+    min-height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 40px;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  /* HERO */
+  #hero {
+    text-align: center;
+    gap: 20px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--accent1);
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-name {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(5rem, 15vw, 12rem);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent3) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0;
+    animation: fadeUp 1s 0.4s forwards;
+    position: relative;
+  }
+
+  .hero-name::after {
+    content: 'JONATHAN';
+    position: absolute;
+    top: 4px; left: 4px;
+    background: none;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 1px rgba(255,61,110,0.3);
+    z-index: -1;
+  }
+
+  .hero-sub {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.7s forwards;
+  }
+
+  .hero-sub span { color: var(--accent4); }
+
+  /* WORD ANIMATIONS */
+  .word-reveal {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+  }
+  .word-reveal span {
+    display: inline-block;
+    transform: translateY(110%);
+    animation: wordSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .char-pop {
+    display: inline-block;
+  }
+  .char-pop .char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px) rotate(8deg);
+    animation: charPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .typewriter {
+    overflow: hidden;
+    border-right: 2px solid var(--accent1);
+    white-space: nowrap;
+    width: 0;
+    animation: typing 2s steps(40) forwards, blink 0.8s step-end infinite;
+  }
+
+  .scramble-text {
+    display: inline-block;
+  }
+
+  .highlight-word {
+    position: relative;
+    display: inline-block;
+    color: var(--accent1);
+  }
+  .highlight-word::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: var(--accent1);
+    animation: lineGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: inherit;
+  }
+
+  .float-word {
+    display: inline-block;
+    animation: floatWord 3s ease-in-out infinite;
+  }
+  .float-word:nth-child(2) { animation-delay: 0.3s; }
+  .float-word:nth-child(3) { animation-delay: 0.6s; }
+
+  @keyframes wordSlideUp {
+    to { transform: translateY(0); }
+  }
+  @keyframes charPop {
+    to { opacity: 1; transform: translateY(0) rotate(0deg); }
+  }
+  @keyframes typing {
+    to { width: 100%; }
+  }
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+  @keyframes lineGrow {
+    to { width: 100%; }
+  }
+  @keyframes floatWord {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes colorShift {
+    0% { color: var(--accent1); }
+    33% { color: var(--accent3); }
+    66% { color: var(--accent2); }
+    100% { color: var(--accent4); }
+  }
+  @keyframes stampIn {
+    0% { transform: scale(2) rotate(-5deg); opacity: 0; }
+    60% { transform: scale(0.95) rotate(1deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .hero-tags {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+    margin-top: 10px;
+  }
+
+  .tag {
+    border: 1px solid var(--muted);
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .tag:hover {
+    border-color: var(--accent1);
+    color: var(--accent1);
+    box-shadow: 0 0 20px var(--glow1);
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    animation: fadeIn 1s 1.8s forwards;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 50px;
+    background: linear-gradient(to bottom, var(--muted), transparent);
+    animation: scrollPulse 1.5s infinite;
+  }
+
+  /* DATA VISUAL */
+  .data-bar-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  /* SECTION HEADERS */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    color: var(--accent1);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 40px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,0.02));
+    pointer-events: none;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .card-accent { position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+
+  /* SKILL BARS */
+  .skill-item { margin-bottom: 28px; }
+  .skill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .skill-name {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .skill-value {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .skill-track {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .skill-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0%;
+    transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* PERSONALITY GRID */
+  .personality-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  .p-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .p-card:hover { transform: scale(1.03); }
+
+  .p-icon {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .p-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .p-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.8;
+    letter-spacing: 0.05em;
+  }
+
+  .p-card::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; right: -30px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.1;
+  }
+
+  /* QUOTE SECTION */
+  #quote {
+    text-align: center;
+  }
+
+  .big-quote {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.2;
+    max-width: 800px;
+    position: relative;
+  }
+
+  .big-quote em {
+    font-style: normal;
+    color: var(--accent1);
+  }
+
+  .quote-mark {
+    font-size: 8rem;
+    line-height: 0;
+    vertical-align: -0.4em;
+    color: var(--accent3);
+    opacity: 0.3;
+    font-family: Georgia, serif;
+  }
+
+  /* UNIVERSITY SECTION */
+  .uni-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  /* NOISE OVERLAY */
+  .noise {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* GLITCH TEXT */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .glitch::before {
+    color: var(--accent2);
+    animation: glitch1 3s infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+  .glitch::after {
+    color: var(--accent1);
+    animation: glitch2 3s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+  }
+
+  /* TIMELINE */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 700px;
+    width: 100%;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent1), var(--accent3), var(--accent2));
+  }
+  .t-item {
+    display: flex;
+    gap: 30px;
+    padding: 0 0 40px 0;
+    position: relative;
+    padding-left: 60px;
+  }
+  .t-dot {
+    position: absolute;
+    left: 12px;
+    top: 4px;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--bg);
+  }
+  .t-content {}
+  .t-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .t-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .t-sub {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  /* FINAL */
+  #final {
+    text-align: center;
+  }
+  .final-number {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(6rem, 20vw, 16rem);
+    font-weight: 800;
+    line-height: 1;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.1);
+    color: transparent;
+    position: relative;
+    letter-spacing: -0.05em;
+  }
+  .final-number::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--accent1), var(--accent3), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    clip-path: inset(0 0 0 0);
+    animation: fillReveal 2s 0.5s forwards;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  /* DIVIDER */
+  .divider {
+    width: 40px;
+    height: 2px;
+    background: var(--accent1);
+    margin: 20px 0;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    91% { transform: translateX(-2px); opacity: 0.7; }
+    92% { transform: translateX(2px); opacity: 0.7; }
+    93% { transform: none; opacity: 0; }
+  }
+  @keyframes glitch2 {
+    0%, 93%, 100% { transform: none; opacity: 0; }
+    94% { transform: translateX(2px); opacity: 0.7; }
+    95% { transform: translateX(-2px); opacity: 0.7; }
+    96% { transform: none; opacity: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes fillReveal {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0% 0 0); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px var(--glow1); }
+    50% { box-shadow: 0 0 50px var(--glow1), 0 0 100px var(--glow1); }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+  }
+
+  /* NAV DOTS */
+  .nav-dots {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 100;
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .nav-dot.active {
+    background: var(--accent1);
+    box-shadow: 0 0 10px var(--accent1);
+    height: 20px;
+    border-radius: 3px;
+  }
+
+  /* ORBIT VISUAL */
+  .orbit-container {
+    position: relative;
+    width: 280px; height: 280px;
+    margin: 0 auto;
+    animation: float 6s ease-in-out infinite;
+  }
+  .orbit-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent1), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 0 40px var(--glow1);
+    animation: pulse-glow 3s infinite;
+  }
+  .orbit-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .orbit-planet {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    margin: -18px 0 0 -18px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .personality-grid { grid-template-columns: 1fr 1fr; }
+    .data-bar-container { grid-template-columns: 1fr; }
+    .uni-grid { grid-template-columns: 1fr; }
+    .personality-grid { grid-template-columns: 1fr; }
+  }
+
+  /* WAVEFORM */
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 50px;
+  }
+  .wave-bar {
+    width: 4px;
+    background: var(--accent1);
+    border-radius: 2px;
+    animation: wavePulse var(--dur) ease-in-out infinite alternate;
+  }
+  @keyframes wavePulse {
+    from { height: 6px; opacity: 0.3; }
+    to { height: var(--h); opacity: 1; }
+  }
+
+  /* CODE RAIN EFFECT FOR HERO */
+  .matrix-col {
+    position: absolute;
+    top: -100%;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent1);
+    opacity: 0.15;
+    writing-mode: vertical-rl;
+    animation: matrixRain var(--speed) linear infinite;
+    animation-delay: var(--delay);
+    user-select: none;
+    pointer-events: none;
+  }
+  @keyframes matrixRain {
+    from { top: -200px; }
+    to { top: 110vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV DOTS -->
+<nav class="nav-dots">
+  <div class="nav-dot active" data-target="hero"></div>
+  <div class="nav-dot" data-target="actitudes"></div>
+  <div class="nav-dot" data-target="aptitudes"></div>
+  <div class="nav-dot" data-target="quote"></div>
+  <div class="nav-dot" data-target="universidad"></div>
+  <div class="nav-dot" data-target="final"></div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <!-- Matrix rain -->
+  <div id="matrixRain" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
+
+  <p class="hero-eyebrow">Análisis Personal · Universidad Simón Bolívar · 2025</p>
+  <h1 class="hero-name glitch" data-text="JONATHAN">JONATHAN</h1>
+  <p class="hero-sub">Científico de Datos en construcción · <span>17 años</span> · Barranquilla</p>
+  <div class="hero-tags">
+    <span class="tag">🎵 Música</span>
+    <span class="tag">⚡ Adrenalina</span>
+    <span class="tag">🧘 Tranquilo</span>
+    <span class="tag">📊 Data Science</span>
+    <span class="tag">🧠 Analítico</span>
+    <span class="tag">🌊 Costa</span>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ===== ACTITUDES ===== -->
+<section id="actitudes">
+  <p class="section-label">// 01 — Actitudes</p>
+  <h2 class="section-title">Cómo soy<br>de verdad</h2>
+
+  <div class="personality-grid">
+
+    <div class="p-card" style="border-color:rgba(0,240,255,0.15);">
+      <div class="p-card" style="background:linear-gradient(135deg,rgba(0,240,255,0.08),transparent);position:absolute;inset:0;border:none;"></div>
+      <span class="p-icon">🌱</span>
+      <div class="p-title">Soy consciente de lo que me falta</div>
+      <p class="p-desc">Aún no domino la ciencia de datos y lo sé. No finjo saber lo que no sé. Esa honestidad es, para mí, el primer paso real para aprender de verdad.</p>
+    </div>
+
+    <div class="p-card" style="border-color:rgba(255,61,110,0.15);">
+      <div class="p-card" style="background:linear-gradient(135deg,rgba(255,61,110,0.08),transparent);position:absolute;inset:0;border:none;"></div>
+      <span class="p-icon">🔥</span>
+      <div class="p-title">Tengo ganas, muchas ganas</div>
+      <p class="p-desc">No tengo todo el conocimiento pero sí tengo el impulso. Quiero aprender, quiero mejorar, quiero llegar. Esa energía no se enseña en ningún salón — y yo ya la traigo conmigo.</p>
+    </div>
+
+    <div class="p-card" style="border-color:rgba(162,89,255,0.15);">
+      <div class="p-card" style="background:linear-gradient(135deg,rgba(162,89,255,0.08),transparent);position:absolute;inset:0;border:none;"></div>
+      <span class="p-icon">🌊</span>
+      <div class="p-title">Soy tranquilo, no apagado</div>
+      <p class="p-desc">Mi tranquilidad no es indiferencia. Es que proceso las cosas sin caer en pánico. Cuando algo no me sale, no exploto — me siento, pienso y vuelvo a intentarlo.</p>
+    </div>
+
+    <div class="p-card" style="border-color:rgba(255,225,77,0.15);">
+      <div class="p-card" style="background:linear-gradient(135deg,rgba(255,225,77,0.08),transparent);position:absolute;inset:0;border:none;"></div>
+      <span class="p-icon">🎵</span>
+      <div class="p-title">La música me enseñó a no rendirme</div>
+      <p class="p-desc">Aprender música requiere repetir, equivocarse y volver. Esa misma paciencia quiero aplicarla aquí. Sé que aprender a programar y analizar datos no es de un día — y eso no me asusta.</p>
+    </div>
+
+    <div class="p-card" style="border-color:rgba(0,240,255,0.15);">
+      <span class="p-icon">👁️</span>
+      <div class="p-title">Prefiero observar antes de hablar</div>
+      <p class="p-desc">Soy de los que escucha primero. En la universidad eso me ayuda: aprendo más de lo que aparento porque estoy atento aunque no sea el más hablador del salón.</p>
+    </div>
+
+    <div class="p-card" style="border-color:rgba(255,61,110,0.15);">
+      <span class="p-icon">⚡</span>
+      <div class="p-title">Me mueve la adrenalina de aprender</div>
+      <p class="p-desc">No necesito la rumba para sentir emoción. El momento en que algo difícil finalmente hace clic — eso me genera más adrenalina que cualquier fiesta. Eso es lo que busco en la universidad.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== APTITUDES ===== -->
+<section id="aptitudes">
+  <p class="section-label">// 02 — Aptitudes</p>
+  <h2 class="section-title">Lo que tengo<br>y lo que quiero</h2>
+
+  <div class="data-bar-container">
+    <div class="card">
+      <div class="card-accent" style="background:linear-gradient(90deg,var(--accent1),var(--accent3));"></div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin-bottom:8px;font-weight:700;">Habilidades técnicas</h3>
+      <p style="font-size:0.65rem;color:var(--muted);margin-bottom:28px;line-height:1.7;">Soy honesto: estoy comenzando. Estas son mis bases reales hoy — y hacia dónde quiero llevarlas.</p>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Lógica y razonamiento</span>
+          <span class="skill-value" style="color:var(--accent1);">En construcción</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent1),var(--accent3));" data-width="38"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Programación (Python / R)</span>
+          <span class="skill-value" style="color:var(--accent1);">Aprendiendo</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent3),var(--accent2));" data-width="25"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Análisis de datos</span>
+          <span class="skill-value" style="color:var(--accent1);">Explorando</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent1),var(--accent4));" data-width="20"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Matemáticas aplicadas</span>
+          <span class="skill-value" style="color:var(--accent4);">Retando</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent2),var(--accent3));" data-width="32"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Potencial de crecimiento</span>
+          <span class="skill-value" style="color:var(--accent2);">🚀 100%</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent2),var(--accent1));" data-width="100"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent" style="background:linear-gradient(90deg,var(--accent2),var(--accent4));"></div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;margin-bottom:8px;font-weight:700;">Actitudes que ya tengo</h3>
+      <p style="font-size:0.65rem;color:var(--muted);margin-bottom:28px;line-height:1.7;">Estas no se aprenden en clase. Son las que traigo conmigo y quiero explotar al máximo.</p>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Ganas de aprender</span>
+          <span class="skill-value">🔥 Altísimas</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent2),var(--accent4));" data-width="95"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Paciencia y calma</span>
+          <span class="skill-value">Sólida</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent4),var(--accent1));" data-width="85"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Escucha y observación</span>
+          <span class="skill-value">Natural en mí</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent1),var(--accent2));" data-width="88"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Honestidad conmigo mismo</span>
+          <span class="skill-value">Mi base</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent3),var(--accent4));" data-width="92"></div>
+        </div>
+      </div>
+
+      <div class="skill-item">
+        <div class="skill-header">
+          <span class="skill-name">Resiliencia</span>
+          <span class="skill-value">Creciendo</span>
+        </div>
+        <div class="skill-track">
+          <div class="skill-fill" style="background:linear-gradient(90deg,var(--accent2),var(--accent1));" data-width="78"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== QUOTE ===== -->
+<section id="quote">
+  <div style="position:relative;text-align:center;max-width:800px;">
+    <div class="waveform" style="justify-content:center;margin-bottom:40px;" id="waveform"></div>
+    <p class="big-quote">
+      "No sé todo lo que necesito saber. Pero <em>sé que quiero aprenderlo</em> — y eso, honestamente, <em>es suficiente para empezar.</em>"
+    </p>
+    <div class="divider" style="margin:30px auto;"></div>
+    <p style="font-size:0.65rem;letter-spacing:0.3em;color:var(--muted);text-transform:uppercase;">— Mi punto de partida real, 17 años, Ciencia de Datos</p>
+
+    <div style="margin-top:60px;">
+      <div class="orbit-container">
+        <div class="orbit-ring" style="width:280px;height:280px;"></div>
+        <div class="orbit-ring" style="width:200px;height:200px;"></div>
+        <div class="orbit-center">🧠</div>
+        <div class="orbit-planet" style="background:var(--accent1);animation:orbit 4s linear infinite;">🎵</div>
+        <div class="orbit-planet" style="background:var(--accent2);animation:orbit 7s linear infinite;margin-left:0;">⚡</div>
+        <div class="orbit-planet" style="background:var(--accent3);animation:orbit 11s linear infinite;transform-origin:center;">📊</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== UNIVERSIDAD ===== -->
+<section id="universidad">
+  <p class="section-label">// 03 — Adaptación universitaria</p>
+  <h2 class="section-title">Cómo me<br>adapto</h2>
+
+  <div class="timeline" id="timeline">
+
+    <div class="t-item reveal">
+      <div class="t-dot" style="border-color:var(--accent1);background:var(--bg);"></div>
+      <div class="t-content">
+        <div class="t-label" style="color:var(--accent1);">Actitud #1</div>
+        <div class="t-text">No pretendo saber lo que no sé</div>
+        <div class="t-sub">En la universidad hay mucha gente que finge entender para no quedar mal. Yo prefiero preguntar aunque me vea como el que no sabe — porque esa es la única forma en que realmente voy a aprender.</div>
+      </div>
+    </div>
+
+    <div class="t-item reveal">
+      <div class="t-dot" style="border-color:var(--accent3);"></div>
+      <div class="t-content">
+        <div class="t-label" style="color:var(--accent3);">Actitud #2</div>
+        <div class="t-text">Mi calma es mi mayor herramienta</div>
+        <div class="t-sub">Cuando un ejercicio no me sale, cuando no entiendo una clase, cuando siento que voy atrasado — no entro en pánico. Me siento, respiro y lo intento de nuevo. Eso me va a salvar más de una vez en la carrera.</div>
+      </div>
+    </div>
+
+    <div class="t-item reveal">
+      <div class="t-dot" style="border-color:var(--accent2);"></div>
+      <div class="t-content">
+        <div class="t-label" style="color:var(--accent2);">Actitud #3</div>
+        <div class="t-text">Quiero explotar lo que tengo</div>
+        <div class="t-sub">Sé que tengo aptitudes que aún no he desarrollado del todo. La música me dio disciplina y paciencia. Mi tranquilidad me da foco. Quiero tomar esas semillas que ya están en mí y cultivarlas dentro de la carrera.</div>
+      </div>
+    </div>
+
+    <div class="t-item reveal">
+      <div class="t-dot" style="border-color:var(--accent4);"></div>
+      <div class="t-content">
+        <div class="t-label" style="color:var(--accent4);">Actitud #4</div>
+        <div class="t-text">La adrenalina de aprender algo nuevo</div>
+        <div class="t-sub">No busco la fiesta, busco el momento en que algo difícil finalmente tiene sentido. Cada concepto nuevo que entiendo me genera esa emoción. Eso es lo que me va a mantener motivado cuando la carrera se ponga dura.</div>
+      </div>
+    </div>
+
+    <div class="t-item reveal">
+      <div class="t-dot" style="border-color:var(--accent1);"></div>
+      <div class="t-content">
+        <div class="t-label" style="color:var(--accent1);">Actitud #5</div>
+        <div class="t-text">Empiezo desde abajo y está bien</div>
+        <div class="t-sub">Tengo 17 años, estoy en primer semestre y hay un mundo entero por aprender. No me comparo con los que ya saben más. Me comparo con el Jonathan de ayer — y siempre quiero que el de mañana sepa más.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== FINAL ===== -->
+<section id="final">
+  <p class="section-label">// Output final</p>
+  <div class="final-number" data-text="17">17</div>
+  <p style="font-family:'Syne',sans-serif;font-size:clamp(1.2rem,3vw,2rem);font-weight:700;margin-top:10px;">años. Un universo entero<br>de posibilidades.</p>
+  <div class="divider" style="margin:30px auto;"></div>
+  <p style="max-width:500px;text-align:center;color:var(--muted);font-size:0.75rem;line-height:2;letter-spacing:0.05em;">
+    No soy el mejor estudiante de Ciencia de Datos todavía.<br>
+    Pero soy honesto, tranquilo, y tengo ganas reales de crecer.<br>
+    Y eso, a los 17 años, es exactamente lo que necesito.<br><br>
+    <span style="color:var(--accent1);">El camino empieza aquí. Y yo ya estoy caminando.</span>
+  </p>
+  <div style="margin-top:50px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+    <div style="text-align:center;padding:24px 32px;background:var(--surface);border:1px solid rgba(0,240,255,0.2);border-radius:16px;min-width:120px;">
+      <div style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--accent1);">∞</div>
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-top:4px;">Curiosidad</div>
+    </div>
+    <div style="text-align:center;padding:24px 32px;background:var(--surface);border:1px solid rgba(255,61,110,0.2);border-radius:16px;min-width:120px;">
+      <div style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--accent2);">01</div>
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-top:4px;">Identidad</div>
+    </div>
+    <div style="text-align:center;padding:24px 32px;background:var(--surface);border:1px solid rgba(162,89,255,0.2);border-radius:16px;min-width:120px;">
+      <div style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--accent3);">+</div>
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-top:4px;">Potencial</div>
+    </div>
+  </div>
+</section>
+
+<script>
+// === CURSOR ===
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 6 + 'px';
+  cursor.style.top = my - 6 + 'px';
+});
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx - 20 + 'px';
+  ring.style.top = ry - 20 + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+// === CANVAS BG ===
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const particles = [];
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.5,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    color: ['#00f0ff','#ff3d6e','#a259ff','#ffe14d'][Math.floor(Math.random()*4)]
+  });
+}
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+  });
+  // connections
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i+1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,240,255,${(1 - dist/120) * 0.15})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawCanvas);
+}
+drawCanvas();
+
+// === MATRIX RAIN ===
+const matrixContainer = document.getElementById('matrixRain');
+const chars = '01アイウエオカキクケコデータサイエンスJONATHAN数学音楽';
+for (let i = 0; i < 20; i++) {
+  const col = document.createElement('div');
+  col.className = 'matrix-col';
+  col.style.left = (i * 5.5) + '%';
+  col.style.setProperty('--speed', (8 + Math.random() * 10) + 's');
+  col.style.setProperty('--delay', (-Math.random() * 15) + 's');
+  let txt = '';
+  for (let j = 0; j < 30; j++) txt += chars[Math.floor(Math.random()*chars.length)] + '\n';
+  col.textContent = txt;
+  matrixContainer.appendChild(col);
+}
+
+// === WAVEFORM ===
+const wf = document.getElementById('waveform');
+for (let i = 0; i < 32; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'wave-bar';
+  const h = 10 + Math.random() * 40;
+  bar.style.setProperty('--h', h + 'px');
+  bar.style.setProperty('--dur', (0.3 + Math.random() * 0.7) + 's');
+  bar.style.animationDelay = (Math.random() * 0.5) + 's';
+  const hue = Math.floor(Math.random() * 3);
+  bar.style.background = ['var(--accent1)','var(--accent3)','var(--accent2)'][hue];
+  wf.appendChild(bar);
+}
+
+// === SKILL BARS (on scroll) ===
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.skill-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('#aptitudes .card').forEach(c => observer.observe(c));
+
+// === NAV DOTS ===
+const sections = document.querySelectorAll('section');
+const dots = document.querySelectorAll('.nav-dot');
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      dots.forEach((d, i) => {
+        d.classList.toggle('active', d.dataset.target === id);
+      });
+    }
+  });
+}, { threshold: 0.5 });
+sections.forEach(s => sectionObserver.observe(s));
+
+dots.forEach(d => {
+  d.addEventListener('click', () => {
+    document.getElementById(d.dataset.target).scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// === HOVER GLOW ON CARDS ===
+document.querySelectorAll('.p-card, .card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.background = `radial-gradient(300px at ${x}px ${y}px, rgba(0,240,255,0.06), var(--surface))`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.background = '';
+  });
+});
+</script>
+</body>
+</html>
